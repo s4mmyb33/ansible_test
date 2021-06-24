@@ -1,0 +1,45 @@
+---
+
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: install updates (Arch)
+    tags: always
+    pacman:
+      update_only: yes
+      update_cache: yes
+    when: ansible_distribution == "Archlinux"
+
+  - name: install updates (Ubuntu)
+    tags: always
+    apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: create a new user
+    tags: always
+    user:
+      name: sjab
+      groups: root
+
+  - name: add ssh key for sjab
+    tags: always
+    authorized_key:
+      user: sjab
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPDiFE4i7D1JNWSahy0C2JRIlX2XWDzcPsgreAbVw+dl ansible"
+  
+  - name: add a sudoers file for sjab 
+    tags: always
+    copy:
+      src: sudoer_sjab
+      dest: /etc/sudoers.d/sjab
+      owner: root
+      group: root
+      mode: 0440
+

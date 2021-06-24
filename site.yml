@@ -14,9 +14,34 @@
   - name: install updates (Ubuntu)
     tags: always
     apt:
-      update_only: yes
+      upgrade: dist
       update_cache: yes
     when: ansible_distribution == "Ubuntu"
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: create a new user
+    tags: always
+    user:
+      name: sjab
+      groups: root
+
+  - name: add ssh key for sjab
+    tags: always
+    authorized_key:
+      user: sjab
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPDiFE4i7D1JNWSahy0C2JRIlX2XWDzcPsgreAbVw+dl ansible"
+  
+  - name: add a sudoers file for sjab 
+    tags: always
+    copy:
+      src: sudoer_sjab
+      dest: /etc/sudoers.d/sjab
+      owner: root
+      group: root
+      mode: 0440
 
 - hosts: web_servers
   become: true
@@ -32,13 +57,38 @@
     when: ansible_distribution == "Ubuntu"
 
   - name: install apache and php
-    tags: apache,archlinux,
+    tags: apache,archlinux,httpd
     pacman:
       name:
         - apache              
-        - php 
+        - php
+        - php-apache 
       state: latest
     when: ansible_distribution == "Archlinux"
+
+  - name: start apache for arch
+    tags: apache,archlinux,httpd
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+    when: ansible_distribution == "Archlinux"
+
+  - name: add email for admin
+    tags: apache,archlinux,httpd
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^ServerAdmin'
+      line: ServerAdmin s4mmyb33@1337.net
+    when: ansible_distribution == "Archlinux"
+    register: httpd
+
+  - name: restart apache for arch
+    tags: apache,archlinux,httpd
+    service:
+      name: httpd
+      state: restarted
+    when: httpd.changed
 
   - name: copy default html file for site
     tags: apache,apache2
