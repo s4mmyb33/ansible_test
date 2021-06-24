@@ -1,13 +1,13 @@
- - name: install mariadb server package (Arch)
-   tags: archlinux,db,mariadb
-   pacman:
-     name: mariadb
-     state: latest
-   when: ansible_distribution == "Archlinux"
- 
- - name: install mariadb server
-   tags: db,mariadb,ubuntu
-   apt:
-     name: mariadb-server
-     state: latest
-   when: ansible_distribution == "Ubuntu"
+- name: install mariadb server package (Arch)
+  tags: archlinux,db,mariadb
+  pacman:
+    name: mariadb
+    state: latest
+  when: ansible_distribution == "Archlinux"
+
+- name: install mariadb server
+  tags: db,mariadb,ubuntu
+  apt:
+    name: mariadb-server
+    state: latest
+  when: ansible_distribution == "Ubuntu"
