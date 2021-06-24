@@ -1,0 +1,4 @@
+ - name: add ssh key for sjab
+   authorized_keys:
+     user: sjab
+     key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPDiFE4i7D1JNWSahy0C2JRIlX2XWDzcPsgreAbVw+dl ansible"

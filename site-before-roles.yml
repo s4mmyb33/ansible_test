@@ -1,0 +1,128 @@
+---
+
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: install updates (Arch)
+    tags: always
+    pacman:
+      update_only: yes
+      update_cache: yes
+    when: ansible_distribution == "Archlinux"
+
+  - name: install updates (Ubuntu)
+    tags: always
+    apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: create a new user
+    tags: always
+    user:
+      name: sjab
+      groups: root
+
+  - name: add ssh key for sjab
+    tags: always
+    authorized_key:
+      user: sjab
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPDiFE4i7D1JNWSahy0C2JRIlX2XWDzcPsgreAbVw+dl ansible"
+  
+  - name: add a sudoers file for sjab 
+    tags: always
+    copy:
+      src: sudoer_sjab
+      dest: /etc/sudoers.d/sjab
+      owner: root
+      group: root
+      mode: 0440
+
+- hosts: web_servers
+  become: true
+  tasks:
+
+  - name: install apache and php
+    tags: apache,apache2,ubuntu
+    apt: 
+      name:
+        - apache2
+        - libapache2-mod-php
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+  - name: install apache and php
+    tags: apache,archlinux,httpd
+    pacman:
+      name:
+        - apache              
+        - php
+        - php-apache 
+      state: latest
+    when: ansible_distribution == "Archlinux"
+
+  - name: start apache for arch
+    tags: apache,archlinux,httpd
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+    when: ansible_distribution == "Archlinux"
+
+  - name: add email for admin
+    tags: apache,archlinux,httpd
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^ServerAdmin'
+      line: ServerAdmin s4mmyb33@1337.net
+    when: ansible_distribution == "Archlinux"
+    register: httpd
+
+  - name: restart apache for arch
+    tags: apache,archlinux,httpd
+    service:
+      name: httpd
+      state: restarted
+    when: httpd.changed
+
+  - name: copy default html file for site
+    tags: apache,apache2
+    copy:
+      src: default_site.html
+      dest: /var/www/html/index.html
+      owner: root
+      group: root
+      mode: 0644	
+
+- hosts: db_servers
+  become: true
+  tasks:
+
+  - name: install mariadb package (Ubuntu)
+    tags: db,mariadb,ubuntu
+    apt:
+      name: mariadb-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+  - name: install mariadb package (Arch)
+    tags: db,mariadb,archlinux
+    apt:
+      name: mariadb
+      state: latest
+    when: ansible_distribution == "Archlinux"
+
+- hosts: file_servers
+  become: true
+  tasks:
+  
+  - name: install samba package
+    tags: samba
+    package:
+      name: samba
+      state: latest
